@@ -5,10 +5,10 @@ FROM ghcr.io/ggerganov/llama.cpp:server
 RUN apt-get update && apt-get install -y python3 python3-pip && rm -rf /var/lib/apt/lists/*
 
 # Installing huggingface_hub
-RUN pip3 install --no-cache-dir huggingface_hub
+RUN pip3 install --no-cache-dir huggingface_hub flask psutil
 
 # Setting a directory for the model
-RUN mkdir -p /models && chmod 777 /models
+RUN mkdir -p /models /app && chmod 777 /models /app 
 
 # Creating a Python script to download the model
 RUN echo "from huggingface_hub import hf_hub_download\n\
