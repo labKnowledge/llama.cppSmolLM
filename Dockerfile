@@ -33,7 +33,7 @@ RUN python3 /app/download_model.py
 # Creating a startup script
 RUN echo '#!/bin/bash\n\
 python3 /app/system_monitor.py &\n\
-/llama-server -m /models/Phi-3.5-mini-instruct-IQ3_M.gguf --port 8080 --host 0.0.0.0 -n 512 "$@"' > /start.sh && \
+/llama-server -m /models/smollm-model.gguf --port 8080 --host 0.0.0.0 -n 512 "$@"' > /start.sh && \
     chmod +x /start.sh
 
 # Setting the working directory
