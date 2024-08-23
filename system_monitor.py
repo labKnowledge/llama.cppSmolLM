@@ -20,12 +20,10 @@ HTML_TEMPLATE = """
     <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/3.7.0/chart.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/socket.io/4.0.1/socket.io.js"></script>
     <style>
-
-         @import url('https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap');
+        @import url('https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap');
         body {
-            font-family: Arial, sans-serif;
+            font-family: 'Poppins', Arial, sans-serif;
             line-height: 1.6;
-            padding: 20px;
             background-color: #1a1b26;
             color: #a9b1d6;
             display: flex;
@@ -40,9 +38,9 @@ HTML_TEMPLATE = """
         }
         .chat-container {
             flex: 3;
-            padding: 20px;
             display: flex;
             flex-direction: column;
+            padding: 20px;
         }
         .monitor-container {
             flex: 1;
@@ -126,108 +124,126 @@ HTML_TEMPLATE = """
             margin-top: 20px;
             color: #565f89;
         }
-       
-
-        .chat-container {
-            height: calc(100vh - 230px);
+        .chat-messages {
+            flex: 1;
+            overflow-y: auto;
+            padding: 20px;
+            display: flex;
+            flex-direction: column;
         }
-
         .message-bubble {
             max-width: 80%;
             word-wrap: break-word;
+            margin-bottom: 10px;
+            padding: 10px 15px;
+            border-radius: 20px;
+            font-size: 14px;
         }
-
         .user-message {
-            background-color: #DCF8C6;
-            border-radius: 20px 20px 0 20px;
+            align-self: flex-end;
+            background-color: #7aa2f7;
+            color: #ffffff;
+            border-bottom-right-radius: 0;
         }
-
         .ai-message {
-            background-color: #E9E9EB;
-            border-radius: 20px 20px 20px 0;
+            align-self: flex-start;
+            background-color: #414868;
+            color: #c0caf5;
+            border-bottom-left-radius: 0;
         }
-
+        .chat-input {
+            display: flex;
+            padding: 20px;
+            background-color: #24283b;
+            border-top: 1px solid #414868;
+        }
+        .chat-input input {
+            flex: 1;
+            padding: 10px;
+            border: none;
+            border-radius: 20px;
+            background-color: #414868;
+            color: #c0caf5;
+            margin-right: 10px;
+        }
+        .chat-input button {
+            padding: 10px 20px;
+            border: none;
+            border-radius: 20px;
+            background-color: #7aa2f7;
+            color: #ffffff;
+            cursor: pointer;
+            transition: background-color 0.3s;
+        }
+        .chat-input button:hover {
+            background-color: #5d8df3;
+        }
         .typing-indicator {
             display: inline-block;
             width: 30px;
             height: 10px;
         }
-
         .typing-indicator::after {
             content: '...';
             animation: typing 1s steps(4, end) infinite;
         }
-
         @keyframes typing {
             0%, 20% { content: '.'; }
             40%, 60% { content: '..'; }
             80%, 100% { content: '...'; }
         }
-
-        .theme-toggle {
+        .theme-toggle, .settings-toggle {
             position: absolute;
             top: 20px;
+            background-color: #414868;
+            border: none;
+            border-radius: 50%;
+            padding: 10px;
+            cursor: pointer;
+            transition: background-color 0.3s;
+        }
+        .theme-toggle:hover, .settings-toggle:hover {
+            background-color: #565f89;
+        }
+        .theme-toggle {
             right: 20px;
         }
-
         .settings-toggle {
-            position: absolute;
-            top: 20px;
-            right: 60px;
+            right: 70px;
         }
-
-        @media (min-width: 768px) {
+        @media (max-width: 768px) {
             .container {
-                max-width: 80%;
-                padding: 2rem;
+                flex-direction: column;
+            }
+            .chat-container, .monitor-container {
+                flex: none;
+                width: 100%;
             }
         }
     </style>
 </head>
 <body>
-    <h1>System Monitor and Chat</h1>
+    <h1 class="text-4xl font-bold my-6">System Monitor and Chat</h1>
     
     <div class="container">
         <div class="chat-container">
-            <div class="container mx-auto p-4 md:p-8 relative">
-                    <button id="themeToggle" class="theme-toggle p-2 bg-gray-200 dark:bg-gray-700 rounded-full focus:outline-none focus:ring-2 focus:ring-indigo-500">
-                        <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6 text-gray-800 dark:text-gray-200" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20.354 15.354A9 9 0 018.646 3.646 9.003 9.003 0 0012 21a9.003 9.003 0 008.354-5.646z" />
-                        </svg>
-                    </button>
-                    <button id="settingsToggle" class="settings-toggle p-2 bg-gray-200 dark:bg-gray-700 rounded-full focus:outline-none focus:ring-2 focus:ring-indigo-500">
-                        <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6 text-gray-800 dark:text-gray-200" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z" />
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
-                        </svg>
-                    </button>
-                    <h1 class="text-4xl font-bold mb-6 text-center text-indigo-600 dark:text-indigo-400">System</h1>
-                    <div class="bg-white dark:bg-gray-800 rounded-lg shadow-md p-4 chat-container overflow-y-auto mb-4">
-                        <div id="chatMessages" class="space-y-4"></div>
-                    </div>
-                    <div class="flex space-x-2">
-                        <input type="text" id="userInput" class="flex-grow rounded-md border-gray-300 shadow-sm focus:border-indigo-300 focus:ring focus:ring-indigo-200 focus:ring-opacity-50 dark:bg-gray-800 dark:text-gray-100 dark:border-gray-600" placeholder="Type your message...">
-                        <button id="sendButton" class="px-4 py-2 bg-indigo-600 text-white rounded-md hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-opacity-50 transition-colors duration-200">Send</button>
-                    </div>
+            <div class="relative">
+                <button id="themeToggle" class="theme-toggle">
+                    <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6 text-gray-200" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20.354 15.354A9 9 0 018.646 3.646 9.003 9.003 0 0012 21a9.003 9.003 0 008.354-5.646z" />
+                    </svg>
+                </button>
+                <button id="settingsToggle" class="settings-toggle">
+                    <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6 text-gray-200" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z" />
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+                    </svg>
+                </button>
             </div>
-
-            <!-- Settings Dialog -->
-            <div id="settingsDialog" class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center hidden">
-                <div class="bg-white dark:bg-gray-800 p-6 rounded-lg shadow-xl w-full max-w-md">
-                    <h2 class="text-2xl font-bold mb-4 text-gray-800 dark:text-gray-200">Settings</h2>
-                    <div class="mb-4">
-                        <label for="apiUrl" class="block text-sm font-medium text-gray-700 dark:text-gray-300">API URL:</label>
-                        <input type="text" id="apiUrl" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-300 focus:ring focus:ring-indigo-200 focus:ring-opacity-50 dark:bg-gray-700 dark:text-gray-100 dark:border-gray-600">
-                    </div>
-                    <div class="mb-4">
-                        <label for="systemPrompt" class="block text-sm font-medium text-gray-700 dark:text-gray-300">System Prompt:</label>
-                        <textarea id="systemPrompt" rows="4" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-300 focus:ring focus:ring-indigo-200 focus:ring-opacity-50 dark:bg-gray-700 dark:text-gray-100 dark:border-gray-600"></textarea>
-                    </div>
-                    <div class="flex justify-end space-x-2">
-                        <button id="cancelSettings" class="px-4 py-2 bg-gray-300 text-gray-800 rounded-md hover:bg-gray-400 focus:outline-none focus:ring-2 focus:ring-gray-500 focus:ring-opacity-50 transition-colors duration-200">Cancel</button>
-                        <button id="saveSettings" class="px-4 py-2 bg-indigo-600 text-white rounded-md hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-opacity-50 transition-colors duration-200">Save</button>
-                    </div>
-                </div>
+            <div id="chatMessages" class="chat-messages"></div>
+            <div class="chat-input">
+                <input type="text" id="userInput" placeholder="Type your message...">
+                <button id="sendButton">Send</button>
             </div>
         </div>
         
@@ -304,6 +320,25 @@ HTML_TEMPLATE = """
             </div>
             
             <p id="updateTime">Last updated: <span id="lastUpdateTime"></span></p>
+        </div>
+    </div>
+
+    <!-- Settings Dialog -->
+    <div id="settingsDialog" class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center hidden">
+        <div class="bg-white dark:bg-gray-800 p-6 rounded-lg shadow-xl w-full max-w-md">
+            <h2 class="text-2xl font-bold mb-4 text-gray-800 dark:text-gray-200">Settings</h2>
+            <div class="mb-4">
+                <label for="apiUrl" class="block text-sm font-medium text-gray-700 dark:text-gray-300">API URL:</label>
+                <input type="text" id="apiUrl" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-300 focus:ring focus:ring-indigo-200 focus:ring-opacity-50 dark:bg-gray-700 dark:text-gray-100 dark:border-gray-600">
+            </div>
+            <div class="mb-4">
+                <label for="systemPrompt" class="block text-sm font-medium text-gray-700 dark:text-gray-300">System Prompt:</label>
+                <textarea id="systemPrompt" rows="4" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-300 focus:ring focus:ring-indigo-200 focus:ring-opacity-50 dark:bg-gray-700 dark:text-gray-100 dark:border-gray-600"></textarea>
+            </div>
+            <div class="flex justify-end space-x-2">
+                <button id="cancelSettings" class="px-4 py-2 bg-gray-300 text-gray-800 rounded-md hover:bg-gray-400 focus:outline-none focus:ring-2 focus:ring-gray-500 focus:ring-opacity-50 transition-colors duration-200">Cancel</button>
+                <button id="saveSettings" class="px-4 py-2 bg-indigo-600 text-white rounded-md hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-opacity-50 transition-colors duration-200">Save</button>
+            </div>
         </div>
     </div>
 
