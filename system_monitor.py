@@ -435,13 +435,14 @@ HTML_TEMPLATE = """
         saveSettingsButton.addEventListener('click', saveSettings);
         cancelSettingsButton.addEventListener('click', toggleSettingsDialog);
 
-        function addMessage(role, content) {
+       function addMessage(role, content) {
             const messageDiv = document.createElement('div');
-            messageDiv.className = `p-4 rounded-lg message-bubble ${role === 'user' ? 'user-message ml-auto' : 'ai-message'}`;
-            messageDiv.innerHTML = `<strong class="text-indigo-600 dark:text-indigo-400">${role === 'user' ? 'You' : 'AI'}:</strong> <span class="message-content"></span>`;
+            messageDiv.className = `message-bubble ${role === 'user' ? 'user-message' : 'ai-message'}`;
+            messageDiv.innerHTML = `<span class="message-content"></span>`;
             chatMessages.appendChild(messageDiv);
             return messageDiv.querySelector('.message-content');
         }
+
 
         async function streamResponse(messages) {
             const messageContent = addMessage('assistant', '');
@@ -511,8 +512,8 @@ HTML_TEMPLATE = """
             const userMessage = userInput.value.trim();
             if (!userMessage) return;
 
-            const userMessageContent = addMessage('user', marked.parse(userMessage));
-            userMessageContent.innerHTML = marked.parse(userMessage);
+            const userMessageContent = addMessage('user', userMessage);
+            userMessageContent.textContent = userMessage;
             userInput.value = '';
             sendButton.disabled = true;
             sendButton.innerHTML = '<span class="typing-indicator"></span>';
