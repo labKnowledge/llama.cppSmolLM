@@ -10,124 +10,223 @@ logging.basicConfig(level=logging.DEBUG)
 HTML_TEMPLATE = """
 <!DOCTYPE html>
 <html>
-<head>
+  <head>
     <title>System Monitor and Chat</title>
-    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
     <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/3.7.0/chart.min.js"></script>
-</head>
-<body>
+    <style>
+      body {
+        font-family: "Poppins", Arial, sans-serif;
+        line-height: 1.6;
+        background-color: #1a1b26;
+        color: #a9b1d6;
+        display: flex;
+        flex-direction: column;
+        height: 100vh;
+        margin: 0;
+      }
+      .container {
+        display: flex;
+        flex: 1;
+        overflow: hidden;
+      }
+      .chat-container {
+        flex: 2.5;
+        display: flex;
+        flex-direction: column;
+        padding: 20px;
+      }
+      .monitor-container {
+        flex: 1.5;
+        padding: 20px;
+        overflow-y: auto;
+      }
+    </style>
+  </head>
+  <body>
     <h1 class="text-4xl font-bold my-6">System Monitor and Chat</h1>
-    
+
     <div class="container">
-        <div class="chat-container">
-            <AIChatInterface></AIChatInterface>
-        </div>
-        
-        <div class="monitor-container">
-            <system-monitor></system-monitor>
-        </div>
+      <div class="chat-container">
+        <ai-chat-interface></ai-chat-interface>
+      </div>
+
+      <div class="monitor-container">
+        <system-monitor></system-monitor>
+      </div>
     </div>
 
-   
-
     <script>
-        class AIChatInterface extends HTMLElement {
-            constructor() {
-                super();
-                this.attachShadow({ mode: 'open' });
-            }
+      class AIChatInterface extends HTMLElement {
+        constructor() {
+          super();
+          this.attachShadow({ mode: "open" });
+        }
 
-            connectedCallback() {
-                this.render();
-                this.setupEventListeners();
-                this.loadSettings();
-            }
 
-            render() {
-                this.shadowRoot.innerHTML = `
+        connectedCallback() {
+          this.render();
+          this.setupEventListeners();
+          this.loadSettings();
+            this.loadLibraries();
+        }
+
+        loadLibraries() {
+            const libraryContainer = this.shadowRoot.querySelector("#libraryContainer");
+            
+            const markedScript = document.createElement("script");
+            markedScript.src = "https://cdnjs.cloudflare.com/ajax/libs/marked/4.0.2/marked.min.js";
+            
+            const highlightScript = document.createElement("script");
+            highlightScript.src = "https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.5.1/highlight.min.js";
+            
+            libraryContainer.appendChild(markedScript);
+            libraryContainer.appendChild(highlightScript);
+
+            // Wait for libraries to load before setting up Markdown and highlighting
+            Promise.all([
+            new Promise(resolve => markedScript.onload = resolve),
+            new Promise(resolve => highlightScript.onload = resolve)
+            ]).then(() => {
+            this.setupMarkdownAndHighlighting();
+            });
+        }
+
+
+
+        render() {
+          this.shadowRoot.innerHTML = `
                 <style>
                     @import url('https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap');
-                    
                     :host {
-                    display: block;
-                    font-family: 'Poppins', sans-serif;
-                    height: 100vh;
-                    }
+          display: block;
+          font-family: 'Poppins', sans-serif;
+          height: 100%;
+        }
 
-                    .container {
-                    height: 100%;
-                    display: flex;
-                    flex-direction: column;
-                    padding: 1rem;
-                    }
-
+        .container {
+          height: 100%;
+          display: flex;
+          flex-direction: column;
+          padding: 1rem;
+          position: relative;
+        }
                     .chat-container {
                     flex-grow: 1;
                     overflow-y: auto;
                     margin-bottom: 1rem;
                     }
+        .chat-messages {
+          flex: 1;
+          overflow-y: auto;
+          padding: 20px 40px 20px 20px;
+          display: flex;
+          flex-direction: column;
+          margin-bottom: 100px; 
 
-                    .message-bubble {
-                    max-width: 80%;
-                    word-wrap: break-word;
-                    padding: 0.5rem 1rem;
-                    margin-bottom: 0.5rem;
-                    border-radius: 1rem;
-                    }
+        }
 
-                    .user-message {
-                    background-color: #DCF8C6;
-                    margin-left: auto;
-                    }
+        .message-bubble {
+          max-width: 80%;
+          word-wrap: break-word;
+          padding: 10px 15px;
+          border-radius: 20px;
+          font-size: 14px;
+          margin-bottom: 10px;
+        }
 
-                    .ai-message {
-                    background-color: #E9E9EB;
-                    }
+        .user-message {
+          align-self: flex-end;
+          background-color: #7aa2f7;
+          color: #ffffff;
+          border-bottom-right-radius: 0;
+        }
 
-                    .input-container {
-                    display: flex;
-                    gap: 0.5rem;
-                    }
+        .ai-message {
+          align-self: flex-start;
+          background-color: #414868;
+          color: #c0caf5;
+          border-bottom-left-radius: 0;
+        }
 
-                    input {
-                    flex-grow: 1;
-                    padding: 0.5rem;
-                    border: 1px solid #ccc;
-                    border-radius: 0.25rem;
-                    }
+        .chat-input {
+          display: flex;
+          padding: 20px;
+          width: 65%;
+          margin-bottom: 10px;
+          position: fixed;
+          bottom: 0;
+          left: 0;
+          background-color: #24283b;
+          border-top: 1px solid #414868;
+          box-sizing: border-box;
+        }
 
-                    button {
-                    padding: 0.5rem 1rem;
-                    background-color: #4F46E5;
-                    color: white;
-                    border: none;
-                    border-radius: 0.25rem;
-                    cursor: pointer;
-                    }
+        .chat-input input {
+          flex: 1;
+          padding: 10px;
+          border: none;
+          border-radius: 20px;
+          background-color: #414868;
+          color: #c0caf5;
+          margin-right: 10px;
+        }
 
-                    button:disabled {
-                    opacity: 0.5;
-                    cursor: not-allowed;
-                    }
+        .chat-input button {
+          padding: 10px 20px;
+          border: none;
+          border-radius: 20px;
+          background-color: #7aa2f7;
+          color: #ffffff;
+          cursor: pointer;
+          transition: background-color 0.3s;
+        }
 
-                    .theme-toggle, .settings-toggle {
-                    position: absolute;
-                    top: 1rem;
-                    width: 2rem;
-                    height: 2rem;
-                    background: none;
-                    border: none;
-                    cursor: pointer;
-                    }
-
-                    .theme-toggle {
-                    right: 1rem;
-                    }
-
-                    .settings-toggle {
-                    right: 3.5rem;
-                    }
-
+        .chat-input button:hover {
+          background-color: #5d8df3;
+        }
+        .typing-indicator {
+            display: inline-block;
+            width: 30px;
+            height: 10px;
+        }
+        .typing-indicator::after {
+            content: '...';
+            animation: typing 1s steps(4, end) infinite;
+        }
+        @keyframes typing {
+            0%, 20% { content: '.'; }
+            40%, 60% { content: '..'; }
+            80%, 100% { content: '...'; }
+        }
+ .theme-toggle, .settings-toggle {
+            position: absolute;
+            top: 20px;
+            background-color: #414868;
+            border: none;
+            border-radius: 50%;
+            padding: 10px;
+            cursor: pointer;
+            transition: background-color 0.3s;
+        }
+        .theme-toggle:hover, .settings-toggle:hover {
+            background-color: #565f89;
+        }
+        .theme-toggle {
+            right: 20px;
+        }
+        .settings-toggle {
+            right: 70px;
+        }
+        @media (max-width: 768px) {
+            .container {
+                flex-direction: column;
+            }
+            .chat-container, .monitor-container {
+                flex: none;
+                width: 100%;
+            }
+        }
                     .settings-dialog {
                     display: none;
                     position: fixed;
@@ -153,40 +252,48 @@ HTML_TEMPLATE = """
                     }
 
                     .settings-content label {
-                    display: block;
-                    margin-bottom: 0.5rem;
+                        display: block;
+                        margin-bottom: 0.5rem;
                     }
 
                     .settings-content input,
                     .settings-content textarea {
-                    width: 100%;
-                    margin-bottom: 1rem;
-                    padding: 0.5rem;
+                        width: 100%;
+                        margin-bottom: 1rem;
+                        padding: 0.5rem;
                     }
 
                     .settings-buttons {
-                    display: flex;
-                    justify-content: flex-end;
-                    gap: 0.5rem;
+                        display: flex;
+                        justify-content: flex-end;
+                        gap: 0.5rem;
                     }
 
                     @media (min-width: 768px) {
-                    .container {
-                        max-width: 80%;
-                        margin: 0 auto;
-                        padding: 2rem;
+                        .container {
+                            max-width: 80%;
+                            margin: 0 auto;
+                            padding: 2rem;
+                        }
                     }
+                    pre code {
+                        display: block;
+                        overflow-x: auto;
+                        padding: 1em;
+                        background: #f0f0f0;
+                        border-radius: 5px;
                     }
                 </style>
 
                 <div class="container">
-                    <h1>AI Chat Interface</h1>
+                    
                     <button class="theme-toggle">🌓</button>
                     <button class="settings-toggle">⚙️</button>
-                    <div class="chat-container"></div>
-                    <div class="input-container">
-                    <input type="text" placeholder="Type your message...">
-                    <button>Send</button>
+                     <div id="chatMessages" class="chat-messages"></div>
+                    <div class="chat-input">
+                        <input type="text" id="userInput" placeholder="Type your message...">
+                        <button id="sendButton">Send</button>
+                    </div>
                     </div>
                 </div>
 
@@ -207,162 +314,182 @@ HTML_TEMPLATE = """
                     </div>
                     </div>
                 </div>
+                <div id="libraryContainer"></div>
                 `;
-            }
-
-            setupEventListeners() {
-                const input = this.shadowRoot.querySelector('input');
-                const sendButton = this.shadowRoot.querySelector('button:not(.theme-toggle):not(.settings-toggle)');
-                const themeToggle = this.shadowRoot.querySelector('.theme-toggle');
-                const settingsToggle = this.shadowRoot.querySelector('.settings-toggle');
-                const settingsDialog = this.shadowRoot.querySelector('.settings-dialog');
-                const saveSettingsButton = this.shadowRoot.querySelector('#saveSettings');
-                const cancelSettingsButton = this.shadowRoot.querySelector('#cancelSettings');
-
-                input.addEventListener('keypress', (e) => {
-                if (e.key === 'Enter' && !e.shiftKey) {
-                    e.preventDefault();
-                    this.sendMessage();
-                }
-                });
-
-                sendButton.addEventListener('click', () => this.sendMessage());
-                themeToggle.addEventListener('click', () => this.toggleTheme());
-                settingsToggle.addEventListener('click', () => this.toggleSettings());
-                saveSettingsButton.addEventListener('click', () => this.saveSettings());
-                cancelSettingsButton.addEventListener('click', () => this.toggleSettings());
-            }
-
-            loadSettings() {
-                const apiUrlInput = this.shadowRoot.querySelector('#apiUrl');
-                const systemPromptInput = this.shadowRoot.querySelector('#systemPrompt');
-
-                apiUrlInput.value = localStorage.getItem('apiUrl') || 'https://ai-smol.5nlcr7.easypanel.host/v1/chat/completions';
-                systemPromptInput.value = localStorage.getItem('systemPrompt') || '';
-            }
-
-            toggleTheme() {
-                document.body.classList.toggle('dark');
-            }
-
-            toggleSettings() {
-                const settingsDialog = this.shadowRoot.querySelector('.settings-dialog');
-                settingsDialog.style.display = settingsDialog.style.display === 'flex' ? 'none' : 'flex';
-            }
-
-            saveSettings() {
-                const apiUrlInput = this.shadowRoot.querySelector('#apiUrl');
-                const systemPromptInput = this.shadowRoot.querySelector('#systemPrompt');
-
-                localStorage.setItem('apiUrl', apiUrlInput.value);
-                localStorage.setItem('systemPrompt', systemPromptInput.value);
-                this.toggleSettings();
-            }
-
-            async sendMessage() {
-                const input = this.shadowRoot.querySelector('input');
-                const sendButton = this.shadowRoot.querySelector('button:not(.theme-toggle):not(.settings-toggle)');
-                const chatContainer = this.shadowRoot.querySelector('.chat-container');
-
-                const userMessage = input.value.trim();
-                if (!userMessage) return;
-
-                this.addMessage('user', userMessage);
-                input.value = '';
-                sendButton.disabled = true;
-
-                const apiUrl = localStorage.getItem('apiUrl') || 'https://ai-smol.5nlcr7.easypanel.host/v1/chat/completions';
-                const systemPrompt = localStorage.getItem('systemPrompt') || '';
-
-                try {
-                const response = await fetch(apiUrl, {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({
-                    model: 'gpt-3.5-turbo',
-                    messages: [
-                        { role: 'system', content: systemPrompt },
-                        { role: 'user', content: userMessage }
-                    ],
-                    stream: true,
-                    }),
-                });
-
-                if (!response.ok) throw new Error(`HTTP error! status: ${response.status}`);
-
-                const reader = response.body.getReader();
-                const decoder = new TextDecoder();
-                let aiMessage = '';
-
-                while (true) {
-                    const { done, value } = await reader.read();
-                    if (done) break;
-
-                    const chunk = decoder.decode(value, { stream: true });
-                    const lines = chunk.split('\n');
-
-                    for (const line of lines) {
-                    if (line.startsWith('data: ')) {
-                        const data = line.slice(6);
-                        if (data === '[DONE]') continue;
-                        try {
-                        const parsed = JSON.parse(data);
-                        const content = parsed.choices[0].delta.content;
-                        if (content) {
-                            aiMessage += content;
-                            this.updateAIMessage(aiMessage);
-                        }
-                        } catch (error) {
-                        console.error('Error parsing JSON:', error);
-                        }
-                    }
-                    }
-                }
-                } catch (error) {
-                console.error('Error:', error);
-                this.addMessage('ai', `Error: ${error.message}`);
-                }
-
-                sendButton.disabled = false;
-                chatContainer.scrollTop = chatContainer.scrollHeight;
-            }
-
-            addMessage(role, content) {
-                const chatContainer = this.shadowRoot.querySelector('.chat-container');
-                const messageDiv = document.createElement('div');
-                messageDiv.className = `message-bubble ${role}-message`;
-                messageDiv.textContent = content;
-                chatContainer.appendChild(messageDiv);
-            }
-
-            updateAIMessage(content) {
-                const chatContainer = this.shadowRoot.querySelector('.chat-container');
-                let aiMessage = chatContainer.querySelector('.ai-message:last-child');
-                if (!aiMessage) {
-                aiMessage = document.createElement('div');
-                aiMessage.className = 'message-bubble ai-message';
-                chatContainer.appendChild(aiMessage);
-                }
-                aiMessage.textContent = content;
-            }
         }
 
-        customElements.define('ai-chat-interface', AIChatInterface);
 
-        // Define the SystemMonitor web component
-        class SystemMonitor extends HTMLElement {
+        setupMarkdownAndHighlighting() {
+            // Configure marked to use highlight.js for code syntax highlighting
+            marked.setOptions({
+            highlight: function(code, lang) {
+                const language = hljs.getLanguage(lang) ? lang : 'plaintext';
+                return hljs.highlight(code, { language }).value;
+            },
+            langPrefix: 'hljs language-'
+            });
+        }
+
+
+        setupEventListeners() {
+            const input = this.shadowRoot.querySelector("#userInput");
+            const sendButton = this.shadowRoot.querySelector("#sendButton");
+            const themeToggle = this.shadowRoot.querySelector(".theme-toggle");
+            const settingsToggle = this.shadowRoot.querySelector(".settings-toggle");
+            const settingsDialog = this.shadowRoot.querySelector(".settings-dialog");
+            const saveSettingsButton = this.shadowRoot.querySelector("#saveSettings");
+            const cancelSettingsButton = this.shadowRoot.querySelector("#cancelSettings");
+
+            input.addEventListener("keypress", (e) => {
+            if (e.key === "Enter" && !e.shiftKey) {
+                e.preventDefault();
+                this.sendMessage();
+            }
+            });
+
+            sendButton.addEventListener("click", () => this.sendMessage());
+            themeToggle.addEventListener("click", () => this.toggleTheme());
+            settingsToggle.addEventListener("click", () => this.toggleSettings());
+            saveSettingsButton.addEventListener("click", () => this.saveSettings());
+            cancelSettingsButton.addEventListener("click", () => this.toggleSettings());
+        }
+        
+        loadSettings() {
+          const apiUrlInput = this.shadowRoot.querySelector("#apiUrl");
+          const systemPromptInput =
+            this.shadowRoot.querySelector("#systemPrompt");
+
+          apiUrlInput.value =
+            localStorage.getItem("apiUrl") ||
+            "https://ai-smol.5nlcr7.easypanel.host/v1/chat/completions";
+          systemPromptInput.value = localStorage.getItem("systemPrompt") || "";
+        }
+
+        toggleTheme() {
+          document.body.classList.toggle("dark");
+        }
+
+        toggleSettings() {
+          const settingsDialog =
+            this.shadowRoot.querySelector(".settings-dialog");
+          settingsDialog.style.display =
+            settingsDialog.style.display === "flex" ? "none" : "flex";
+        }
+
+        saveSettings() {
+          const apiUrlInput = this.shadowRoot.querySelector("#apiUrl");
+          const systemPromptInput =
+            this.shadowRoot.querySelector("#systemPrompt");
+
+          localStorage.setItem("apiUrl", apiUrlInput.value);
+          localStorage.setItem("systemPrompt", systemPromptInput.value);
+          this.toggleSettings();
+        }
+  
+        async sendMessage() {
+            const input = this.shadowRoot.querySelector("#userInput");
+            const sendButton = this.shadowRoot.querySelector("#sendButton");
+            const chatMessages = this.shadowRoot.querySelector("#chatMessages");
+
+            const userMessage = input.value.trim();
+            if (!userMessage) return;
+
+            this.addMessage("user", userMessage);
+            input.value = "";
+            sendButton.disabled = true;
+
+            const apiUrl = localStorage.getItem("apiUrl") || "https://ai-smol.5nlcr7.easypanel.host/v1/chat/completions";
+            const systemPrompt = localStorage.getItem("systemPrompt") || "";
+
+            try {
+            const response = await fetch(apiUrl, {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({
+                model: "gpt-3.5-turbo",
+                messages: [
+                    { role: "system", content: systemPrompt },
+                    { role: "user", content: userMessage },
+                ],
+                stream: true,
+                }),
+            });
+
+            if (!response.ok) throw new Error(`HTTP error! status: ${response.status}`);
+
+            const reader = response.body.getReader();
+            const decoder = new TextDecoder();
+            let aiMessage = "";
+
+            while (true) {
+                const { done, value } = await reader.read();
+                if (done) break;
+
+                const chunk = decoder.decode(value, { stream: true });
+                const lines = chunk.split("\n");
+
+                for (const line of lines) {
+                if (line.startsWith("data: ")) {
+                    const data = line.slice(6);
+                    if (data === "[DONE]") continue;
+                    try {
+                    const parsed = JSON.parse(data);
+                    const content = parsed.choices[0].delta.content;
+                    if (content) {
+                        aiMessage += content;
+                        this.updateAIMessage(aiMessage);
+                    }
+                    } catch (error) {
+                    console.error("Error parsing JSON:", error);
+                    }
+                }
+                }
+            }
+            } catch (error) {
+            console.error("Error:", error);
+            this.addMessage("ai", `Error: ${error.message}`);
+            }
+
+            sendButton.disabled = false;
+            chatMessages.scrollTop = chatMessages.scrollHeight;
+        }
+
+        addMessage(role, content) {
+            const chatMessages = this.shadowRoot.querySelector("#chatMessages");
+            const messageDiv = document.createElement("div");
+            messageDiv.className = `message-bubble ${role}-message`;
+            messageDiv.innerHTML = marked.parse(content);
+            chatMessages.appendChild(messageDiv);
+        }
+
+        updateAIMessage(content) {
+            const chatMessages = this.shadowRoot.querySelector("#chatMessages");
+            let aiMessage = chatMessages.querySelector(".ai-message:last-child");
+            if (!aiMessage) {
+            aiMessage = document.createElement("div");
+            aiMessage.className = "message-bubble ai-message";
+            chatMessages.appendChild(aiMessage);
+            }
+            aiMessage.innerHTML = marked.parse(content);
+        }
+    }
+
+      customElements.define("ai-chat-interface", AIChatInterface);
+
+      // Define the SystemMonitor web component
+      class SystemMonitor extends HTMLElement {
         constructor() {
-            super();
-            this.attachShadow({ mode: 'open' });
+          super();
+          this.attachShadow({ mode: "open" });
         }
 
         connectedCallback() {
-            this.render();
-            this.setupEventListeners();
+          this.render();
+          this.setupEventListeners();
         }
 
         render() {
-            this.shadowRoot.innerHTML = `
+          this.shadowRoot.innerHTML = `
             <style>
                 :host {
                 display: block;
@@ -451,8 +578,6 @@ HTML_TEMPLATE = """
                 }
             </style>
             
-            <h1>System Monitor</h1>
-            
             <div id="deviceInfo">
                 <h2>Server Specifications</h2>
                 <div class="info-grid">
@@ -529,64 +654,88 @@ HTML_TEMPLATE = """
         }
 
         setupEventListeners() {
-            this.updateData();
-            setInterval(() => this.updateData(), 2000);
+          this.updateData();
+          setInterval(() => this.updateData(), 2000);
         }
 
         updateData() {
-            fetch('/data')
-            .then(response => response.json())
-            .then(data => {
-                this.updateSystemInfo(data);
-                this.updateUsageInfo(data);
-                this.updateCharts(data);
+          fetch("/data")
+            .then((response) => response.json())
+            .then((data) => {
+              this.updateSystemInfo(data);
+              this.updateUsageInfo(data);
+              this.updateCharts(data);
             })
-            .catch(error => console.error('Error:', error));
+            .catch((error) => console.error("Error:", error));
         }
 
         updateSystemInfo(data) {
-            this.shadowRoot.getElementById('os').textContent = `${data.system} ${data.release}`;
-            this.shadowRoot.getElementById('cpu').textContent = data.processor;
-            this.shadowRoot.getElementById('totalMemory').textContent = `${data.memory.total} GB`;
-            this.shadowRoot.getElementById('diskSpace').textContent = `${data.disk.total} GB`;
-            this.shadowRoot.getElementById('hostname').textContent = data.node_name;
-            this.shadowRoot.getElementById('network').textContent = data.network_info;
+          this.shadowRoot.getElementById(
+            "os"
+          ).textContent = `${data.system} ${data.release}`;
+          this.shadowRoot.getElementById("cpu").textContent = data.processor;
+          this.shadowRoot.getElementById(
+            "totalMemory"
+          ).textContent = `${data.memory.total} GB`;
+          this.shadowRoot.getElementById(
+            "diskSpace"
+          ).textContent = `${data.disk.total} GB`;
+          this.shadowRoot.getElementById("hostname").textContent =
+            data.node_name;
+          this.shadowRoot.getElementById("network").textContent =
+            data.network_info;
         }
 
         updateUsageInfo(data) {
-            this.shadowRoot.getElementById('cpuUsage').textContent = `${data.cpu_usage}%`;
-            this.shadowRoot.getElementById('cpuLoad').textContent = `Load ${data.cpu_load}`;
-            this.shadowRoot.getElementById('memoryUsage').textContent = `${data.memory.percent}%`;
-            this.shadowRoot.getElementById('memoryDetails').textContent = `${data.memory.used} GB / ${data.memory.total} GB`;
-            this.shadowRoot.getElementById('diskUsage').textContent = `${data.disk.percent}%`;
-            this.shadowRoot.getElementById('diskDetails').textContent = `${data.disk.used} GB / ${data.disk.total} GB`;
-            this.shadowRoot.getElementById('networkUsage').textContent = `↓ ${data.network.bytes_recv} MB ↑ ${data.network.bytes_sent} MB`;
-            this.shadowRoot.getElementById('lastUpdateTime').textContent = new Date().toLocaleTimeString();
+          this.shadowRoot.getElementById(
+            "cpuUsage"
+          ).textContent = `${data.cpu_usage}%`;
+          this.shadowRoot.getElementById(
+            "cpuLoad"
+          ).textContent = `Load ${data.cpu_load}`;
+          this.shadowRoot.getElementById(
+            "memoryUsage"
+          ).textContent = `${data.memory.percent}%`;
+          this.shadowRoot.getElementById(
+            "memoryDetails"
+          ).textContent = `${data.memory.used} GB / ${data.memory.total} GB`;
+          this.shadowRoot.getElementById(
+            "diskUsage"
+          ).textContent = `${data.disk.percent}%`;
+          this.shadowRoot.getElementById(
+            "diskDetails"
+          ).textContent = `${data.disk.used} GB / ${data.disk.total} GB`;
+          this.shadowRoot.getElementById(
+            "networkUsage"
+          ).textContent = `↓ ${data.network.bytes_recv} MB ↑ ${data.network.bytes_sent} MB`;
+          this.shadowRoot.getElementById("lastUpdateTime").textContent =
+            new Date().toLocaleTimeString();
         }
 
-            updateCharts(data) {
-                // Update CPU chart
-                const currentTime = new Date().toLocaleTimeString();
-                
-                this.chartData.labels.push(currentTime);
-                this.chartData.datasets[0].data.push(data.cpu_usage);
+        updateCharts(data) {
+          // Update CPU chart
+          const currentTime = new Date().toLocaleTimeString();
 
-                // Keep only the last 10 data points
-                if (this.chartData.labels.length > 10) {
-                this.chartData.labels.shift();
-                this.chartData.datasets[0].data.shift();
-                }
+          this.chartData.labels.push(currentTime);
+          this.chartData.datasets[0].data.push(data.cpu_usage);
 
-                // Update the chart
-                this.cpuChart.update();
-            }
+          // Keep only the last 10 data points
+          if (this.chartData.labels.length > 10) {
+            this.chartData.labels.shift();
+            this.chartData.datasets[0].data.shift();
+          }
+
+          // Update the chart
+          this.cpuChart.update();
         }
+      }
 
-        // Register the custom element
-        customElements.define('system-monitor', SystemMonitor);
+      // Register the custom element
+      customElements.define("system-monitor", SystemMonitor);
     </script>
-</body>
+  </body>
 </html>
+
 """
 
 @app.route('/')
