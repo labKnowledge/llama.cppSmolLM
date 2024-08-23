@@ -40,7 +40,7 @@ python3 /app/system_monitor.py &\n\
 WORKDIR /app
 
 # Exposing ports for llama.cpp server and monitoring UI
-EXPOSE 8080 5000
+EXPOSE 8080 5001
 
 # Setting the entrypoint to our startup script
 ENTRYPOINT ["/start.sh"]
