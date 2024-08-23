@@ -343,6 +343,35 @@ HTML_TEMPLATE = """
     </div>
 
     <script>
+
+    // Chat Functionality
+       let apiUrl = localStorage.getItem('apiUrl') || 'https://ai-smol.5nlcr7.easypanel.host/v1/chat/completions';
+        const chatMessages = document.getElementById('chatMessages');
+        const userInput = document.getElementById('userInput');
+        const sendButton = document.getElementById('sendButton');
+        const themeToggle = document.getElementById('themeToggle');
+        const settingsToggle = document.getElementById('settingsToggle');
+        const settingsDialog = document.getElementById('settingsDialog');
+        const apiUrlInput = document.getElementById('apiUrl');
+        const systemPromptInput = document.getElementById('systemPrompt');
+        const saveSettingsButton = document.getElementById('saveSettings');
+        const cancelSettingsButton = document.getElementById('cancelSettings');
+
+        let conversation = [];
+        let darkMode = false;
+
+        // Load saved settings
+        apiUrlInput.value = apiUrl;
+        systemPromptInput.value = localStorage.getItem('systemPrompt') || '';
+
+        themeToggle.addEventListener('click', toggleDarkMode);
+        settingsToggle.addEventListener('click', toggleSettingsDialog);
+        saveSettingsButton.addEventListener('click', saveSettings);
+        cancelSettingsButton.addEventListener('click', toggleSettingsDialog);
+
+
+
+
         function updateData() {
             fetch('/data')
                 .then(response => response.json())
@@ -394,25 +423,7 @@ HTML_TEMPLATE = """
             }
         });
 
-       // Chat Functionality
-       let apiUrl = localStorage.getItem('apiUrl') || 'https://ai-smol.5nlcr7.easypanel.host/v1/chat/completions';
-        const chatMessages = document.getElementById('chatMessages');
-        const userInput = document.getElementById('userInput');
-        const sendButton = document.getElementById('sendButton');
-        const themeToggle = document.getElementById('themeToggle');
-        const settingsToggle = document.getElementById('settingsToggle');
-        const settingsDialog = document.getElementById('settingsDialog');
-        const apiUrlInput = document.getElementById('apiUrl');
-        const systemPromptInput = document.getElementById('systemPrompt');
-        const saveSettingsButton = document.getElementById('saveSettings');
-        const cancelSettingsButton = document.getElementById('cancelSettings');
-
-        let conversation = [];
-        let darkMode = false;
-
-        // Load saved settings
-        apiUrlInput.value = apiUrl;
-        systemPromptInput.value = localStorage.getItem('systemPrompt') || '';
+       
 
         function toggleDarkMode() {
             darkMode = !darkMode;
@@ -429,11 +440,6 @@ HTML_TEMPLATE = """
             localStorage.setItem('systemPrompt', systemPromptInput.value);
             toggleSettingsDialog();
         }
-
-        themeToggle.addEventListener('click', toggleDarkMode);
-        settingsToggle.addEventListener('click', toggleSettingsDialog);
-        saveSettingsButton.addEventListener('click', saveSettings);
-        cancelSettingsButton.addEventListener('click', toggleSettingsDialog);
 
        function addMessage(role, content) {
             const messageDiv = document.createElement('div');
